@@ -73,7 +73,7 @@ def main():
             for vacancy in get_vacancies_hh(language, page)["items"]:
                 if vacancy["salary"]:
                     salaries.append(predict_rub_salary(vacancy["salary"]["from"],vacancy["salary"]["to"]))
-            sleep(0.3)
+            sleep(1)
         table_hh.append([language, vacancies_info["found"], len(salaries), int(sum(salaries)/len(salaries))])
     # SuperJob
         salaries = []
