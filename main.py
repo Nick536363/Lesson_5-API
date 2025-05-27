@@ -17,25 +17,26 @@ def predict_rub_salary(salary_from=None, salary_to=None):
         return None
 
 
-def get_vacancies_hh(search_text, page):
+def get_vacancies_hh(programming_language, page, CITY_ID, DAYS_PERIOD):
     url_hh = "https://api.hh.ru/vacancies/"
     params_hh = {
-    "area": 1,
-    "period": 30,
-    "page": page,
+        "area": CITY_ID,
+        "period": DAYS_PERIOD,
+        "page": page,
     }
-    params_hh["text"] = search_text
+    params_hh["text"] = programming_language
     response_hh = get(url=url_hh, params=params_hh)
     response_hh.raise_for_status()
     return response_hh.json()
 
-def get_vacancies_info_sj(search_text, page, api_key):
+
+def get_vacancies_sj(programming_language, page, api_key):
     url_sj = "https://api.superjob.ru/2.0/vacancies/"
     headers_sj = {
         "X-Api-App-Id": api_key
     }
     params_sj = {
-        "keyword": search_text,
+        "keyword": programming_language,
         "town": "Moscow",
         "page": page,
     }
@@ -43,55 +44,59 @@ def get_vacancies_info_sj(search_text, page, api_key):
     response_sj.raise_for_status()
     return response_sj.json()
 
-languages = [
-    "JavaScript",
-    "Java",
-    "Python",
-    "Ruby",
-    "PHP",
-    "C++",
-    "C#",
-    "Objective-C",
-    "GoLang",
-]
-table_hh = [
-    ["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"]
-]
-table_sj = [
-    ["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"]
-]
-AsciiTable(table_sj).title = "SuperJob"
-AsciiTable(table_hh).title = "HeadHunter"
-load_dotenv(find_dotenv())
-
-def main():
-    for language in languages:
-    # Headhunter
+def get_stats_hh(languages, output_table):
+     for language in languages:
         salaries = []
-        vacancies_info = get_vacancies_hh(language, 0)
+        vacancies_info = get_vacancies_hh(language, 0, 1, 30)
         for page in range(vacancies_info["pages"] - 1):
-            for vacancy in get_vacancies_hh(language, page)["items"]:
+            for vacancy in get_vacancies_hh(language, page, 1, 30)["items"]:
                 if vacancy["salary"]:
-                    salaries.append(predict_rub_salary(vacancy["salary"]["from"],vacancy["salary"]["to"]))
+                    salaries.append(predict_rub_salary(vacancy["salary"]["from"], vacancy["salary"]["to"]))
             sleep(1)
-        table_hh.append([language, vacancies_info["found"], len(salaries), int(sum(salaries)/len(salaries))])
-    # SuperJob
+        output_table.append([language, vacancies_info["found"], len(salaries), int(sum(salaries)/len(salaries))])
+
+def get_stats_sj(languages, output_table):
+    for language in languages:
         salaries = []
-        vacancies_found = get_vacancies_info_sj(language, 0, getenv("SECRET_KEY"))["total"]
-        for page in count(0,1):
-            vacancies_info = get_vacancies_info_sj(language, page, getenv("SECRET_KEY")) 
+        vacancies_found = get_vacancies_sj(language, 0, getenv("SUPERJOB_API"))["total"]
+        for page in count(0, 1):
+            vacancies_info = get_vacancies_sj(language, page, getenv("SUPERJOB_API")) 
             if not vacancies_info["objects"]:
                 break
             for vacancy in vacancies_info["objects"]:
-                if predict_rub_salary(vacancy["payment_from"], vacancy["payment_to"]):
-                    salaries.append(predict_rub_salary(vacancy["payment_from"], vacancy["payment_to"]))
+                vacancy_salary = predict_rub_salary(vacancy["payment_from"], vacancy["payment_to"])
+                if vacancy_salary:
+                    salaries.append(vacancy_salary)
         
         if len(salaries):
-            table_sj.append([language, vacancies_found, len(salaries), int(sum(salaries)/len(salaries))])
+            output_table.append([language, vacancies_found, len(salaries), int(sum(salaries)/len(salaries))])
             continue
-        table_sj.append([language, vacancies_found, 0, None])
+        output_table.append([language, vacancies_found, 0, None])
 
 
+def main():
+    languages = [
+        "JavaScript",
+        "Java",
+        "Python",
+        "Ruby",
+        "PHP",
+        "C++",
+        "C#",
+        "Objective-C",
+        "GoLang",
+    ]
+    table_hh = [
+        ["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"]
+    ]
+    table_sj = [
+        ["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"]
+    ]      
+    AsciiTable(table_sj).title = "SuperJob"
+    AsciiTable(table_hh).title = "HeadHunter"
+    load_dotenv(find_dotenv())
+    get_stats_hh(languages, table_hh)
+    get_stats_sj(languages, table_sj)
     print("HeadHunter", AsciiTable(table_hh).table)
     print("SuperJob", AsciiTable(table_sj).table)
 
