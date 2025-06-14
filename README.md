@@ -17,7 +17,7 @@ git clone https://github.com/Nick536363/Lesson_5-API
 Чтобы запустить код вам потребуеться установить зависимости следющим образом:
 
 ```bash
-pip install -r requirments.txt
+pip install -r requirements.txt
 ```
 
 # Переменные окружения
