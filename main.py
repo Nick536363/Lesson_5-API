@@ -64,7 +64,7 @@ def get_stats_hh(languages, city_id, days_period):
                 break
             sleep(1)
         if len(salaries):
-            all_stats.append([language, vacancies_found, len(salaries), int(sum(salaries)) / len(salaries)])
+            all_stats.append([language, vacancies_found, len(salaries), f"{round(sum(salaries) / len(salaries))} ₽"])
             continue
         all_stats.append([language, vacancies_found, len(salaries), None])
     return all_stats
@@ -84,12 +84,14 @@ def get_stats_sj(languages, api_key):
                 if vacancy_salary:
                     salaries.append(vacancy_salary)       
         if len(salaries):
-            all_stats.append([language, vacancies_found, len(salaries), int(sum(salaries)) / len(salaries)])
+            all_stats.append([language, vacancies_found, len(salaries), f"{round(sum(salaries) / len(salaries))} ₽" ])
             continue
         all_stats.append([language, vacancies_found, len(salaries), None])
+    return all_stats
 
 
 def main():
+    load_dotenv(find_dotenv())
     city_id = 1
     period_in_days = 30
     api_key_sj = getenv("SUPERJOB_API_KEY")
@@ -104,8 +106,8 @@ def main():
         "Swift",
         "GoLang",
     ]
-    table_hh = table_sj = [["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"]]    
-    load_dotenv(find_dotenv())
+    header =["Язык программирования", "Вакансий найдено", "Вакансий обработано", "Средняя зарплата"]
+    table_hh, table_sj = [header.copy()], [header.copy()]
     statistics_hh = get_stats_hh(languages, city_id, period_in_days)
     statistics_sj = get_stats_sj(languages, api_key_sj)
     fill_table(statistics_hh, table_hh)
